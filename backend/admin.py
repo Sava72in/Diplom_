@@ -1,4 +1,5 @@
 from django.contrib import admin
+from jet.admin import CompactInline
 from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, Contact, DeliveryAddress
 
 # Регистрируем модели в админке

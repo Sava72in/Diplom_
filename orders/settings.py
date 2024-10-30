@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,8 +33,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'backend',
+    'drf_spectacular',
     'rest_framework',
+    'backend',
+    'jet', # для тюнинга админ-панели (теперь она выглядит по-другому)
     'rest_framework.authtoken',  # Для токенов аутентификации
     'rest_framework_simplejwt',  # Для JWT аутентификации
     'django.contrib.admin',
@@ -41,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    'allauth.socialaccount.providers.google' # авторизация с google
 ]
 
 MIDDLEWARE = [
@@ -56,12 +62,20 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'orders.urls'
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'orders',
+    'DESCRIPTION': 'Тестирование АПИ через "DRF-Spectacula"',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 TEMPLATES = [
@@ -93,6 +107,15 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",  # Замените на ваш адрес Redis
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -129,8 +152,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-
+SITE_ID = 1
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+sentry_sdk.init(
+    dsn="https://efe35a06750643e82ea7fe9e6a3714d9@o4508211737788416.ingest.de.sentry.io/4508211740541008",
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=1.0,  # Установите 0.0 для отключения отслеживания транзакций
+    send_default_pii=True  # Отправка личной информации (например, IP-адреса)
+)
